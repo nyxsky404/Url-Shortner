@@ -1,4 +1,8 @@
+const { PrismaClient } = require('./generated/prisma')
+const prisma = new PrismaClient()
+
 const { nanoid } = require('nanoid');
+
 const express = require('express');
 const app = express();
 
@@ -38,7 +42,7 @@ app.post('/short', (req, res) => {
         short_url = `http://localhost:3000/${key}`
 
         ele = {
-            id: key,
+            url_id: key,
             org_url: long_url,
             shorter_url: short_url
         }

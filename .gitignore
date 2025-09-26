@@ -136,3 +136,4 @@ logs
 # Build files
 build/
 dist/
+/generated/prisma
