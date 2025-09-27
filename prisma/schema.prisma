@@ -16,7 +16,7 @@ datasource db {
 
 model url_data{
   id Int @id @default(autoincrement())
-  url_id Int @unique
+  url_id String @unique
   org_url String @unique
   shorter_url String @unique
 }

@@ -8,17 +8,31 @@ const app = express();
 
 app.use(express.json())
 
-db = []
 
+// Home Page
 app.get('/', (req,res)=> {
     res.status(200).send('Welcome to Url Shortener')
 })
 
-app.get('/get-db', (req,res)=> {
-    res.status(200).json(db)
+
+// Get all Data
+app.get('/get-db', async (req,res)=> {
+
+    const get_data = await prisma.url_data.findMany({
+        select:{
+            url_id: true,
+            org_url: true,
+            shorter_url: true
+        }
+    })
+
+    res.status(200).json(get_data)
 })
 
-app.post('/short', (req, res) => {
+
+
+// Create Shorter url
+app.post('/short', async(req, res) => {
 
     if (!req.body.url){
         return res.status(400).json({
@@ -26,37 +40,50 @@ app.post('/short', (req, res) => {
         })
     }
 
-    long_url = req.body.url
+    const long_url = req.body.url
 
-    check_url = () => {
-        if (db){
-        for (let i of db){
-            if (i.org_url == long_url){
-            return i}}
+    // find url if exists
+    const check_url = await prisma.url_data.findFirst({
+            where: {
+            org_url:  long_url
+            },
+            select:{
+                url_id: true,
+                org_url: true,
+                shorter_url: true
+            }
+        })
+
+
+    if (!check_url){
+        const key = nanoid(6)
+        const short_url = `http://localhost:3000/${key}`
+
+        // create data
+        const create_data = await prisma.url_data.create({
+                data: {
+                    url_id: key,
+                    org_url: long_url,
+                    shorter_url: short_url
+                },
+                        select:{
+            url_id: true,
+            org_url: true,
+            shorter_url: true
         }
-        return false
-    }
-
-    if (!check_url()){
-        key = nanoid(6)
-        short_url = `http://localhost:3000/${key}`
-
-        ele = {
-            url_id: key,
-            org_url: long_url,
-            shorter_url: short_url
-        }
-
-        db.push(ele)
-        res.status(200).json(ele)
+            })
+        res.status(200).json(create_data)
     }
     else{
-        res.status(200).json(check_url())
+        res.status(200).json(check_url)
     }
 })
 
 
-Port = 3000
-app.listen(Port, ()=> {
-    console.log(`Server started on port ${Port}`)
+
+
+// Server listen
+const PORT = 3000
+app.listen(PORT, ()=> {
+    console.log(`Server started on port ${PORT}`)
 })
