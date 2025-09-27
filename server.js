@@ -48,9 +48,7 @@ app.post('/short', async(req, res) => {
             org_url:  long_url
             },
             select:{
-                url_id: true,
-                org_url: true,
-                shorter_url: true
+                org_url: true
             }
         })
 
@@ -72,10 +70,11 @@ app.post('/short', async(req, res) => {
             shorter_url: true
         }
             })
-        res.status(200).json(create_data)
+        res.status(201).location(long_url)
     }
     else{
-        res.status(200).json(check_url)
+        // res.status(200).json(check_url)
+        res.redirect(302, check_url.org_url)
     }
 })
 
