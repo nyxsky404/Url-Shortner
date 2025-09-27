@@ -8,7 +8,6 @@ const app = express();
 
 app.use(express.json())
 
-
 // Home Page
 app.get('/', (req,res)=> {
     res.status(200).send('Welcome to Url Shortener')
@@ -78,6 +77,34 @@ app.post('/short', async(req, res) => {
     }
 })
 
+
+app.delete('/delete/:key', async(req,res)=> {
+    const delete_key = req.params.key
+
+    // find url if exists
+    const check_url = await prisma.url_data.findFirst({
+            where: {
+            url_id:  delete_key
+            }
+        })
+    
+    if (!check_url){
+        return res.status(404).json({
+            msg: "No record found"
+        })
+    }
+
+    const delete_url = await prisma.url_data.delete({
+        where: {
+            url_id: delete_key
+        }
+    })
+
+    res.status(200).json({
+        msg: "Successfully deleted",
+        data: delete_url
+    })
+})
 
 
 
