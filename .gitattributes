@@ -1,2 +1,29 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# Source code
+*.js text eol=lf
+*.json text eol=lf
+*.prisma text eol=lf
+
+# Documentation
+*.md text eol=lf
+
+# Scripts
+*.sh text eol=lf
+
+# SQL migrations
+*.sql text eol=lf
+
+# Images
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.svg text
+
+# Fonts
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary

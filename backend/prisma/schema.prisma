@@ -1,0 +1,50 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model url_data {
+  id          Int      @id @default(autoincrement())
+  url_id      String   @unique
+  org_url     String   @unique
+  shorter_url String   @unique
+  created_at  DateTime @default(now())
+  clicks      Click[]
+}
+
+model Click {
+  id     Int      @id @default(autoincrement())
+  url_id String
+  url    url_data @relation(fields: [url_id], references: [url_id], onDelete: Cascade)
+
+  // Timestamp
+  clicked_at DateTime @default(now())
+
+  // Geographic data
+  ip_address String?
+  country    String?
+  city       String?
+
+  // Device & Browser info
+  user_agent  String? @db.Text
+  browser     String?
+  os          String?
+  device_type String?
+
+  // Referrer data
+  referrer String? @db.Text
+
+  @@index([url_id])
+  @@index([clicked_at])
+}
