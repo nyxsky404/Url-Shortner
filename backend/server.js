@@ -131,19 +131,40 @@ app.post('/short', async(req, res) => {
     }
 
     const long_url = req.body.url
+    const customAlias = req.body.customAlias
+
+    if (customAlias) {
+        const aliasRegex = /^[a-zA-Z0-9_-]{3,20}$/
+        if (!aliasRegex.test(customAlias)) {
+            return res.status(400).json({
+                message: "Custom alias must be 3-20 characters long and contain only letters, numbers, hyphens, and underscores"
+            })
+        }
+
+        const aliasExists = await prisma.url_data.findUnique({
+            where: { url_id: customAlias }
+        })
+
+        if (aliasExists) {
+            return res.status(409).json({
+                message: "This custom alias is already taken. Please choose another one."
+            })
+        }
+    }
 
     const check_url = await prisma.url_data.findFirst({
             where: {
             org_url:  long_url
             },
             select:{
-                shorter_url: true
+                url_id: true,
+                shorter_url: true,
+                created_at: true
             }
         })
 
-
     if (!check_url){
-        const key = nanoid(6)
+        const key = customAlias || nanoid(6)
         const short_url = `http://localhost:3000/${key}`
 
         const create_data = await prisma.url_data.create({
