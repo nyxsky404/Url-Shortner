@@ -2,11 +2,15 @@ const { PrismaClient } = require('./generated/prisma')
 const prisma = new PrismaClient()
 
 const { nanoid } = require('nanoid');
+const QRCode = require('qrcode');
 
 const express = require('express');
 const UAParser = require('ua-parser-js');
 const geoip = require('geoip-lite');
 const cors = require('cors');
+
+require('dotenv').config();
+const SERVER_URL = process.env.SERVER_URL || 'http://localhost:3000';
 
 const app = express();
 
@@ -122,6 +126,53 @@ app.get('/analytics/:key', async (req, res) => {
     });
 })
 
+app.get('/qr/:key', async (req, res) => {
+    const url_key = req.params.key;
+    const format = req.query.format || 'png';
+    const download = req.query.download === 'true';
+
+    const urlData = await prisma.url_data.findUnique({
+        where: { url_id: url_key },
+        select: { shorter_url: true }
+    });
+
+    if (!urlData) {
+        return res.status(404).json({ message: 'URL not found' });
+    }
+
+    try {
+        if (format === 'svg') {
+            const qrSvg = await QRCode.toString(urlData.shorter_url, { type: 'svg' });
+            res.setHeader('Content-Type', 'image/svg+xml');
+            if (download) {
+                res.setHeader('Content-Disposition', `attachment; filename="qr-${url_key}.svg"`);
+            } else {
+                res.setHeader('Content-Disposition', `inline; filename="qr-${url_key}.svg"`);
+            }
+            res.send(qrSvg);
+        } else if (format === 'png' || format === 'jpeg' || format === 'jpg') {
+            const qrBuffer = await QRCode.toBuffer(urlData.shorter_url, {
+                type: 'png',
+                width: 500,
+                margin: 2
+            });
+            const contentType = format === 'jpeg' || format === 'jpg' ? 'image/jpeg' : 'image/png';
+            const extension = format === 'jpeg' || format === 'jpg' ? 'jpg' : 'png';
+            res.setHeader('Content-Type', contentType);
+            if (download) {
+                res.setHeader('Content-Disposition', `attachment; filename="qr-${url_key}.${extension}"`);
+            } else {
+                res.setHeader('Content-Disposition', `inline; filename="qr-${url_key}.${extension}"`);
+            }
+            res.send(qrBuffer);
+        } else {
+            res.status(400).json({ message: 'Invalid format. Use png, jpeg, or svg' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error generating QR code', error: error.message });
+    }
+})
+
 app.post('/short', async(req, res) => {
 
     if (!req.body || !req.body.url){
@@ -165,7 +216,7 @@ app.post('/short', async(req, res) => {
 
     if (!check_url){
         const key = customAlias || nanoid(6)
-        const short_url = `http://localhost:3000/${key}`
+        const short_url = `${SERVER_URL}/${key}`
 
         const create_data = await prisma.url_data.create({
                 data: {
@@ -180,10 +231,28 @@ app.post('/short', async(req, res) => {
                     created_at: true
                 }
             })
-        res.status(200).json(create_data)
+        
+        const response = {
+            ...create_data,
+            qr_code: {
+                png: `${SERVER_URL}/qr/${key}?format=png`,
+                jpeg: `${SERVER_URL}/qr/${key}?format=jpeg`,
+                svg: `${SERVER_URL}/qr/${key}?format=svg`
+            }
+        }
+        
+        res.status(200).json(response)
     }
     else{
-        res.status(200).json(check_url)
+        const response = {
+            ...check_url,
+            qr_code: {
+                png: `${SERVER_URL}/qr/${check_url.url_id}?format=png`,
+                jpeg: `${SERVER_URL}/qr/${check_url.url_id}?format=jpeg`,
+                svg: `${SERVER_URL}/qr/${check_url.url_id}?format=svg`
+            }
+        }
+        res.status(200).json(response)
     }
 })
 
