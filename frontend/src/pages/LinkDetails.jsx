@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './LinkDetails.css'
 
-const API_URL = 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 function LinkDetails({ link, navigateTo }) {
   const [analytics, setAnalytics] = useState(null)

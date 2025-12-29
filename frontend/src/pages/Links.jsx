@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import './Links.css'
 
-const API_URL = 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 function Links({ navigateTo }) {
   const [links, setLinks] = useState([])
